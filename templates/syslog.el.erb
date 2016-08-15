@@ -1,0 +1,79 @@
+#
+# THIS FILE IS CONTROLLED BY PUPPET - ANY CHANGES WILL BE OVERWRITTEN
+#
+# rsyslog v5 configuration file
+
+# For more information see /usr/share/doc/rsyslog-*/rsyslog_conf.html
+# If you experience problems, see http://www.rsyslog.com/doc/troubleshoot.html
+
+#### MODULES ####
+<% if !@syslog_messagesize.empty? -%>
+$MaxMessageSize <%= @syslog_messagesize %>
+<% end -%>
+
+$ModLoad imuxsock # provides support for local system logging (e.g. via logger command)
+$ModLoad imklog   # provides kernel logging support (previously done by rklogd)
+<% if @syslog_receive -%>
+<% if @syslog_protocol == 'udp' -%>
+$ModLoad imudp    # provides network based udp logging support 
+ 
+# Start listening on UDP 
+$UDPServerRun <%= @syslog_port %>
+<% else -%>
+$ModLoad imtcp    # provides network based tcp logging support 
+ 
+# Start listening on TCP
+$TCPServerRun <%= @syslog_port %>
+<% end -%>
+<% end -%>
+
+#### GLOBAL DIRECTIVES ####
+
+# Use default timestamp format
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+
+#### RULES ####
+# Include files in /et/rsyslog.d
+$IncludeConfig /etc/rsyslog.d/
+
+# Log anything (except mail) of level info or higher.
+# Don't log private authentication messages!
+*.info;mail.none;authpriv.none;cron.none                /var/log/messages
+
+# The authpriv file has restricted access.
+authpriv.*                                              /var/log/secure
+
+# Log all the mail messages in one place.
+mail.*                                                  -/var/log/maillog
+
+# Log cron stuff
+cron.*                                                  /var/log/cron
+
+# Everybody gets emergency messages
+*.emerg                                                 *
+
+# Save news errors of level crit and higher in a special file.
+uucp,news.crit                                          /var/log/spooler
+
+# Save boot messages also to boot.log
+local7.*                                                /var/log/boot.log
+
+# ### begin forwarding rule ###
+# The statement between the begin ... end define a SINGLE forwarding
+# rule. They belong together, do NOT split them. If you create multiple
+# forwarding rules, duplicate the whole block!
+# Remote Logging (we use TCP for reliable delivery)
+#
+# An on-disk queue is created for this action. If the remote host is
+# down, messages are spooled to disk and sent when it is up again.
+#$WorkDirectory /var/lib/rsyslog # where to place spool files
+#$ActionQueueFileName fwdRule1 # unique name prefix for spool files
+#$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)
+#$ActionQueueSaveOnShutdown on # save messages to disk on shutdown
+#$ActionQueueType LinkedList   # run asynchronously
+#$ActionResumeRetryCount -1    # infinite retries if host is down
+
+# remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
+*.*                            <%= '@' + @syslog_target %>
+
+# ### end of the forwarding rule ###
