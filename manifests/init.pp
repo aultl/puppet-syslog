@@ -28,7 +28,7 @@ class syslog (
   $service_name   = $syslog::params::service_name,
 
   # Where should syslog traffic go by default?
-  # Default: syslog.jewelry.acn
+  # Default: syslog.exmple.tld
   $syslog_target  = $syslog::params::syslog_target,
 
   # Should syslog listen on the network?
